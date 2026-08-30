@@ -30,7 +30,7 @@ loan, car loan, and home loan applications.
 | `03_python_eda_analysis.py` | Python | EDA on cleaned data: risk scoring, correlation analysis, 4 charts, summary exports |
 | `04_powerbi_dax_measures.txt` | Power BI | DAX calculated columns and measures for a risk dashboard |
 | `05_powerbi_powerquery_m.txt` | Power BI | Power Query M script replicating the cleaning steps natively in Power BI |
-| `screenshots/` | — | Dashboard and chart images embedded above (regenerate anytime via `03_python_eda_analysis.py`) |
+| `*.png` | — | Dashboard and chart images embedded above (regenerate anytime via `03_python_eda_analysis.py`) |
 
 ## Workflow
 
