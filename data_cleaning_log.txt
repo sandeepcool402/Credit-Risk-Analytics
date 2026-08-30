@@ -1,0 +1,17 @@
+[1] Loaded raw file: 1048 rows, 34 columns
+[2] Dropped fully blank rows: 8 removed
+[3] Trimmed whitespace and normalized blank/NA markers to NaN
+[4] Removed 40 exact-duplicate rows and 8 duplicate Customer IDs
+[4b] Dropped rows with missing Customer ID: 1 removed
+[5] Standardized text casing for names, city, occupation, gender, marital status, KYC status; normalized city name aliases/typos
+[6] Standardized 5 Yes/No flag columns to consistent 'Y'/'N' values
+[7] Cleaned 6 currency columns (stripped symbols/commas, fixed negatives) and coerced 9 numeric columns
+[8] Flagged 35 out-of-range ages (<18 or >100) as missing
+[9] Standardized phone numbers to 10-digit format; 221 invalid/missing
+[10] Validated email format; 107 invalid/missing after cleaning
+[11] Parsed 5 mixed date formats into a single standard datetime; 72 unparseable/missing
+[12] Imputed 284 missing 'Annual Income' values with median (1458933.0)
+[12] Imputed 21 missing 'Credit Score' values with median (607.0)
+[12] Imputed 35 missing 'Age' values with median (43.0)
+[14] Dropped 0 rows unusable due to missing all contact/income info
+[15] Saved cleaned dataset: 991 rows, 34 columns -> credit_data_cleaned.csv

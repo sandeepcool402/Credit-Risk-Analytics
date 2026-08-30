@@ -1,0 +1,153 @@
+/* ============================================================================
+   CREDIT RISK ANALYSIS - POWER BI DAX MEASURES
+   ----------------------------------------------------------------------------
+   Project : Credit Card & Loan (Personal / Car / Home) Credit Risk Analysis
+   Usage   : Import credit_data_cleaned.csv into Power BI, apply the Power
+             Query transformations in 05_powerbi_powerquery_m.txt, then add
+             the calculated columns and measures below in a new table
+             "Risk Model" or directly on the Customers table.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   A. CALCULATED COLUMNS (row-level, mirror the Excel/SQL/Python logic
+      so all four tools produce identical numbers)
+--------------------------------------------------------------------------- */
+
+Debt to Income Ratio =
+DIVIDE(
+    Customers[Monthly EMI Outstanding] * 12,
+    Customers[Annual Income],
+    0
+)
+
+Risk Score =
+VAR CreditComponent = (900 - Customers[Credit Score]) / 600 * 100
+VAR DTIComponent = MIN(Customers[Debt to Income Ratio] * 100, 100)
+VAR MissedComponent = MIN(Customers[Missed Payments (12M)] * 20, 100)
+VAR UtilComponent = Customers[Credit Utilization (%)]
+RETURN
+    ROUND(
+        0.4 * CreditComponent
+        + 0.3 * DTIComponent
+        + 0.2 * MissedComponent
+        + 0.1 * UtilComponent,
+        1
+    )
+
+Risk Category =
+SWITCH(
+    TRUE(),
+    Customers[Risk Score] <= 30, "Low",
+    Customers[Risk Score] <= 60, "Medium",
+    "High"
+)
+
+Eligibility Status =
+SWITCH(
+    TRUE(),
+    Customers[Credit Score] >= 650
+        && Customers[Debt to Income Ratio] <= 0.4
+        && Customers[Missed Payments (12M)] <= 2
+        && Customers[Risk Score] <= 50, "Eligible",
+    Customers[Credit Score] >= 550
+        && Customers[Missed Payments (12M)] <= 4
+        && Customers[Risk Score] <= 75, "Review",
+    "Not Eligible"
+)
+
+/* ---------------------------------------------------------------------------
+   B. MEASURES (for dashboard cards, charts and slicers)
+--------------------------------------------------------------------------- */
+
+Total Customers =
+COUNTROWS(Customers)
+
+Avg Annual Income =
+AVERAGE(Customers[Annual Income])
+
+Avg Credit Score =
+AVERAGE(Customers[Credit Score])
+
+Avg Risk Score =
+AVERAGE(Customers[Risk Score])
+
+Avg DTI =
+AVERAGE(Customers[Debt to Income Ratio])
+
+Eligible Customers =
+CALCULATE(
+    [Total Customers],
+    Customers[Eligibility Status] = "Eligible"
+)
+
+Eligibility Rate % =
+DIVIDE([Eligible Customers], [Total Customers], 0)
+
+Not Eligible Customers =
+CALCULATE(
+    [Total Customers],
+    Customers[Eligibility Status] = "Not Eligible"
+)
+
+Review Customers =
+CALCULATE(
+    [Total Customers],
+    Customers[Eligibility Status] = "Review"
+)
+
+High Risk Customers =
+CALCULATE(
+    [Total Customers],
+    Customers[Risk Category] = "High"
+)
+
+High Risk Rate % =
+DIVIDE([High Risk Customers], [Total Customers], 0)
+
+Total Requested Amount =
+SUM(Customers[Requested Amount])
+
+Requested Amount - Eligible Only =
+CALCULATE(
+    [Total Requested Amount],
+    Customers[Eligibility Status] = "Eligible"
+)
+
+Avg FOIR =
+AVERAGEX(
+    Customers,
+    DIVIDE(
+        Customers[Monthly EMI Outstanding] + Customers[Proposed EMI],
+        Customers[Annual Income] / 12,
+        0
+    )
+)
+
+Cross-Sell Opportunity (Credit Card) =
+CALCULATE(
+    [Total Customers],
+    Customers[Has Credit Card] = "N",
+    Customers[Eligibility Status] = "Eligible"
+)
+
+MoM Applications =
+VAR CurrentMonth = [Total Customers]
+VAR PriorMonth =
+    CALCULATE(
+        [Total Customers],
+        DATEADD('Date'[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentMonth - PriorMonth, PriorMonth, BLANK())
+
+/* ---------------------------------------------------------------------------
+   C. SUGGESTED VISUALS
+   - KPI cards: Total Customers, Avg Risk Score, Eligibility Rate %, Total
+     Requested Amount
+   - Donut chart: Eligibility Status (Eligible / Review / Not Eligible)
+   - Stacked bar: Risk Category by Requested Loan Type
+   - Map / bar: Avg Risk Score by City
+   - Line chart: Applications by Month (needs a Date dimension table +
+     DATEADD-based time intelligence, see MoM Applications measure)
+   - Table: High Risk Customers with drillthrough to customer detail page
+--------------------------------------------------------------------------- */

@@ -1,0 +1,166 @@
+// ============================================================================
+// CREDIT RISK ANALYSIS - POWER QUERY (M) TRANSFORMATION SCRIPT
+// ----------------------------------------------------------------------------
+// Project : Credit Card & Loan (Personal / Car / Home) Credit Risk Analysis
+// Usage   : Power BI Desktop -> Home -> Transform Data -> Advanced Editor ->
+//           paste this script (update the file path first). This performs
+//           the same cleaning as the Python script, natively in Power Query,
+//           so the pipeline can be demonstrated in either tool.
+// Source  : credit_data_unclean.csv  (or credit_data_cleaned.csv if you
+//           prefer to skip straight to modeling - see note at the bottom)
+// ============================================================================
+
+let
+    Source = Csv.Document(
+        File.Contents("C:\Data\credit_data_unclean.csv"),
+        [Delimiter=",", Columns=34, Encoding=65001, QuoteStyle=QuoteStyle.Csv]
+    ),
+    PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+
+    // 1. Trim whitespace on all text columns
+    TrimmedText = Table.TransformColumns(
+        PromotedHeaders,
+        {},                                   // apply to all columns below via a helper step
+        null,
+        MissingField.Ignore
+    ),
+    TrimAll = Table.TransformColumns(
+        TrimmedText,
+        List.Transform(
+            Table.ColumnNames(TrimmedText),
+            each {_, each if _ = null then null else Text.Trim(Text.From(_)), type text}
+        )
+    ),
+
+    // 2. Remove fully duplicate rows and duplicate Customer IDs (keep first)
+    RemoveDuplicateRows = Table.Distinct(TrimAll),
+    RemoveDuplicateIds = Table.Distinct(RemoveDuplicateRows, {"Customer ID"}),
+    RemoveBlankIds = Table.SelectRows(RemoveDuplicateIds, each [Customer ID] <> null and [Customer ID] <> ""),
+
+    // 3. Standardize Gender
+    FixGender = Table.TransformColumns(
+        RemoveBlankIds,
+        {"Gender", each
+            let up = Text.Upper(Text.Trim(_ ?? ""))
+            in if up = "M" or up = "MALE" then "Male"
+               else if up = "F" or up = "FEMALE" then "Female"
+               else _,
+            type text}
+    ),
+
+    // 4. Standardize Y/N flag columns
+    FlagCols = {"Has Credit Card", "Has Personal Loan", "Has Car Loan", "Has Home Loan", "Previous Default History"},
+    FixFlags = List.Accumulate(
+        FlagCols,
+        FixGender,
+        (state, col) =>
+            Table.TransformColumns(
+                state,
+                {col, each
+                    let up = Text.Upper(Text.Trim(Text.From(_) ?? ""))
+                    in if List.Contains({"Y","YES","1","TRUE"}, up) then "Y"
+                       else if List.Contains({"N","NO","0","FALSE"}, up) then "N"
+                       else null,
+                    type text}
+            )
+    ),
+
+    // 5. Clean currency columns: strip ₹ symbol and commas, convert to number, fix negatives
+    CurrencyCols = {"Annual Income", "Existing Outstanding Debt", "Requested Amount",
+                     "Co-Applicant Income", "Collateral Value"},
+    FixCurrency = List.Accumulate(
+        CurrencyCols,
+        FixFlags,
+        (state, col) =>
+            Table.TransformColumns(
+                state,
+                {col, each
+                    let
+                        cleaned = Text.Remove(Text.From(_ ?? ""), {"₹", ","}),
+                        num = try Number.FromText(cleaned) otherwise null
+                    in if num = null then null else Number.Abs(num),
+                    type number}
+            )
+    ),
+
+    // 6. Clean Age: coerce to number, blank out-of-range values (18-100)
+    FixAge = Table.TransformColumns(
+        FixCurrency,
+        {"Age", each
+            let n = try Number.FromText(Text.From(_)) otherwise null
+            in if n = null or n < 18 or n > 100 then null else n,
+            type number}
+    ),
+
+    // 7. Standardize City aliases/typos
+    FixCity = Table.ReplaceValue(FixAge, "Bangalore", "Bengaluru", Replacer.ReplaceText, {"City"}),
+    FixCity2 = Table.ReplaceValue(FixCity, "Banglore", "Bengaluru", Replacer.ReplaceText, {"City"}),
+    FixCity3 = Table.ReplaceValue(FixCity2, "Bombay", "Mumbai", Replacer.ReplaceText, {"City"}),
+    FixCity4 = Table.ReplaceValue(FixCity3, "Calcutta", "Kolkata", Replacer.ReplaceText, {"City"}),
+    FixCity5 = Table.ReplaceValue(FixCity4, "New Delhi", "Delhi", Replacer.ReplaceText, {"City"}),
+
+    // 8. Parse Application Date (multiple source formats -> Power Query attempts
+    //    culture-aware parsing; for a portfolio, format is standardized upstream
+    //    in the Python script - here we just coerce and null out failures)
+    FixDate = Table.TransformColumns(
+        FixCity5,
+        {"Application Date", each try Date.From(_) otherwise null, type date}
+    ),
+
+    // 9. Coerce remaining numeric columns
+    NumericCols = {"Existing Products Count", "Credit Score", "Missed Payments (12M)",
+                   "Credit Utilization (%)", "Years with Bank", "Number of Dependents",
+                   "Employment Tenure (Years)", "Existing Loans (Other Banks)",
+                   "Requested Tenure (Months)", "Monthly EMI Outstanding"},
+    FixNumeric = List.Accumulate(
+        NumericCols,
+        FixDate,
+        (state, col) =>
+            Table.TransformColumns(
+                state,
+                {col, each try Number.FromText(Text.From(_)) otherwise null, type number}
+            )
+    ),
+
+    // 10. Fill nulls: co-applicant income / collateral -> 0 (means "none")
+    FillZeros = Table.ReplaceValue(FixNumeric, null, 0, Replacer.ReplaceValue, {"Co-Applicant Income", "Collateral Value"}),
+
+    // 11. Add calculated column: Debt-to-Income Ratio
+    AddDTI = Table.AddColumn(FillZeros, "Debt to Income Ratio", each
+        if [Annual Income] = null or [Annual Income] = 0 then 0
+        else ([Monthly EMI Outstanding] * 12) / [Annual Income], type number),
+
+    // 12. Add calculated column: Risk Score
+    AddRiskScore = Table.AddColumn(AddDTI, "Risk Score", each
+        let
+            creditComp = (900 - [Credit Score]) / 600 * 100,
+            dtiComp = List.Min({[Debt to Income Ratio] * 100, 100}),
+            missedComp = List.Min({[Missed Payments (12M)] * 20, 100}),
+            utilComp = [Credit Utilization (%)]
+        in
+            Number.Round(0.4*creditComp + 0.3*dtiComp + 0.2*missedComp + 0.1*utilComp, 1),
+        type number),
+
+    // 13. Add calculated column: Risk Category
+    AddRiskCategory = Table.AddColumn(AddRiskScore, "Risk Category", each
+        if [Risk Score] <= 30 then "Low"
+        else if [Risk Score] <= 60 then "Medium"
+        else "High", type text),
+
+    // 14. Add calculated column: Eligibility Status
+    AddEligibility = Table.AddColumn(AddRiskCategory, "Eligibility Status", each
+        if [Credit Score] >= 650 and [Debt to Income Ratio] <= 0.4
+           and [Missed Payments (12M)] <= 2 and [Risk Score] <= 50 then "Eligible"
+        else if [Credit Score] >= 550 and [Missed Payments (12M)] <= 4
+           and [Risk Score] <= 75 then "Review"
+        else "Not Eligible", type text)
+
+in
+    AddEligibility
+
+// ----------------------------------------------------------------------------
+// NOTE: If you'd rather load the already-cleaned CSV (credit_data_cleaned.csv
+// from the Python step) directly, replace steps 1-10 with a simple
+// Csv.Document + Table.PromoteHeaders + type-casting, then keep steps 11-14
+// to add the calculated risk columns for the Power BI model.
+// ----------------------------------------------------------------------------
