@@ -8,43 +8,67 @@ loan, car loan, and home loan applications.
 
 **Excel Summary Dashboard**
 
+
+
 ![Excel Dashboard](excel_dashboard_screenshot.png)
+
+
 
 **Python EDA — Risk Score Distribution & Eligibility Breakdown**
 
-<img src="risk_score_distribution.png" width="49%"> <img src="eligibility_breakdown.png" width="49%">
+
+
+![](risk_score_distribution.png)
+
+ 
+
+![](eligibility_breakdown.png)
+
+
 
 **Python EDA — Risk by Product & Correlation Heatmap**
 
-<img src="risk_by_product.png" width="49%"> <img src="correlation_heatmap.png" width="49%">
+
+
+![](risk_by_product.png)
+
+ 
+
+![](correlation_heatmap.png)
+
+
 
 ## Project Structure
 
-| File | Tool | Purpose |
-|---|---|---|
-| `credit_risk_report.xlsx` | Excel | Full workbook: Summary Dashboard, cleaned Customer Data (45 columns, live formulas), and a Raw Data (Unclean) sheet |
-| `credit_data_unclean.csv` | — | Raw source data with intentional data-quality issues |
-| `01_data_cleaning.py` | Python | Cleans the raw CSV: dedup, standardization, validation, imputation, audit log |
-| `credit_data_cleaned.csv` | — | Output of the cleaning script — analysis-ready dataset |
-| `02_sql_analysis.sql` | SQL | Schema, risk/eligibility view, and 10 analytical queries (KPIs, segmentation, window functions, cross-sell) |
-| `03_python_eda_analysis.py` | Python | EDA on cleaned data: risk scoring, correlation analysis, 4 charts, summary exports |
-| `04_powerbi_dax_measures.txt` | Power BI | DAX calculated columns and measures for a risk dashboard |
-| `05_powerbi_powerquery_m.txt` | Power BI | Power Query M script replicating the cleaning steps natively in Power BI |
-| `*.png` | — | Dashboard and chart images embedded above (regenerate anytime via `03_python_eda_analysis.py`) |
+| File                              | Tool     | Purpose                                                                                                             |
+| ---------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `credit_risk_report.xlsx`          | Excel    | Full workbook: Summary Dashboard, cleaned Customer Data (45 columns, live formulas), and a Raw Data (Unclean) sheet |
+| `credit_data_unclean.csv`          | —        | Raw source data with intentional data-quality issues                                                                |
+| `01_data_cleaning.py`              | Python   | Cleans the raw CSV: dedup, standardization, validation, imputation, audit log                                       |
+| `credit_data_cleaned.csv`          | —        | Output of the cleaning script — analysis-ready dataset                                                              |
+| `02_sql_analysis.sql`              | SQL      | Schema, risk/eligibility view, and 10 analytical queries (KPIs, segmentation, window functions, cross-sell)         |
+| `03_python_eda_analysis.py`        | Python   | EDA on cleaned data: risk scoring, correlation analysis, 4 charts, summary exports                                  |
+| `04_powerbi_dax_measures.txt`      | Power BI | DAX calculated columns and measures for a risk dashboard                                                            |
+| `05_powerbi_powerquery_m.txt`      | Power BI | Power Query M script replicating the cleaning steps natively in Power BI                                            |
+| `excel_dashboard_screenshot.png`   | —        | Excel Summary Dashboard screenshot                                                                                  |
+| `risk_score_distribution.png`      | —        | Python EDA chart — risk score histogram                                                                             |
+| `eligibility_breakdown.png`        | —        | Python EDA chart — eligibility status pie chart                                                                     |
+| `risk_by_product.png`              | —        | Python EDA chart — risk category by loan product                                                                    |
+| `correlation_heatmap.png`          | —        | Python EDA chart — correlation between risk drivers                                                                 |
+
+All chart images can be regenerated at any time by running `03_python_eda_analysis.py`.
 
 ## Workflow
 
-```
 credit_data_unclean.csv
-        │
-        ▼ (01_data_cleaning.py — Python)
+│
+▼ (01_data_cleaning.py — Python)
 credit_data_cleaned.csv
-        │
-        ├──▶ 02_sql_analysis.sql        (load into a database, run analysis)
-        ├──▶ 03_python_eda_analysis.py  (EDA, charts, correlation)
-        └──▶ Power BI (05 → 04)         (Power Query transform → DAX model → dashboard)
+│
+├──▶ 02_sql_analysis.sql        (load into a database, run analysis)
+├──▶ 03_python_eda_analysis.py  (EDA, charts, correlation)
+└──▶ Power BI (05 → 04)         (Power Query transform → DAX model → dashboard)
 ```
-
 The Excel workbook (`credit_risk_report.xlsx`) is a standalone deliverable
 that mirrors the same risk-scoring logic (Debt-to-Income Ratio, Risk Score,
 Risk Category, Eligibility Status) using native Excel formulas, so the
