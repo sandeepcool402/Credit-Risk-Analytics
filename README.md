@@ -8,15 +8,15 @@ loan, car loan, and home loan applications.
 
 **Excel Summary Dashboard**
 
-![Excel Dashboard](screenshots/excel_dashboard_screenshot.png)
+![Excel Dashboard](excel_dashboard_screenshot.png)
 
 **Python EDA — Risk Score Distribution & Eligibility Breakdown**
 
-<img src="screenshots/risk_score_distribution.png" width="49%"> <img src="screenshots/eligibility_breakdown.png" width="49%">
+<img src="risk_score_distribution.png" width="49%"> <img src="screenshots/eligibility_breakdown.png" width="49%">
 
 **Python EDA — Risk by Product & Correlation Heatmap**
 
-<img src="screenshots/risk_by_product.png" width="49%"> <img src="screenshots/correlation_heatmap.png" width="49%">
+<img src="risk_by_product.png" width="49%"> <img src="correlation_heatmap.png" width="49%">
 
 ## Project Structure
 
