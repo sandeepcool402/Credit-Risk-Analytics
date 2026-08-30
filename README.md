@@ -12,7 +12,7 @@ loan, car loan, and home loan applications.
 
 **Python EDA — Risk Score Distribution & Eligibility Breakdown**
 
-<img src="risk_score_distribution.png" width="49%"> <img src="screenshots/eligibility_breakdown.png" width="49%">
+<img src="risk_score_distribution.png" width="49%"> <img src="eligibility_breakdown.png" width="49%">
 
 **Python EDA — Risk by Product & Correlation Heatmap**
 
