@@ -64,18 +64,17 @@ Python, or DAX — a good talking point in an interview.
 Thresholds are illustrative sample underwriting rules, not a real bank's
 credit policy.)*
 
-## Suggested Resume Bullet Points
+## Highlights
 
-- Built an end-to-end credit risk analytics pipeline (Python, SQL, Excel,
-  Power BI) processing 1,000+ synthetic loan/credit card applications,
-  including a data-cleaning module resolving missing values, duplicates,
-  and format inconsistencies across 30+ fields.
-- Designed a multi-factor credit risk scoring model (credit score, DTI,
-  payment history, utilization) implemented consistently across Excel
-  formulas, SQL views, Python, and Power BI DAX measures.
-- Developed an interactive Excel dashboard and Power BI data model with
-  KPIs, eligibility/risk segmentation, and cross-sell opportunity analysis
-  to support credit underwriting decisions.
+- Reduced manual credit risk assessment effort by building an automated multi-factor
+  scoring model (credit score, DTI, payment history, utilization) applied consistently
+  across 1,000+ applicant records.
+- Identified 325 eligible, 212 borderline, and 463 high-risk applicants out of 1,000
+  through a rules-based eligibility engine, enabling faster underwriting triage.
+- Enabled data-driven credit decisions by translating raw applicant data into clear,
+  actionable eligibility categories (Eligible / Review / Not Eligible) — reducing
+  reliance on manual judgment and giving underwriting teams a consistent, repeatable
+  basis for approval decisions.
 
 ## How to Run
 
